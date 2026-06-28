@@ -14,23 +14,30 @@
   },
   "required_files": [
     "Autounattend.xml",
-    "sources/$OEM$/$$/Setup/Scripts/SetupComplete.cmd",
-    "sources/$OEM$/$$/Setup/Scripts/RunSCOSSetup.ps1",
-    "sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1"
+    "Sources/$OEM$/$$/Setup/Scripts/SetupComplete.cmd",
+    "Sources/$OEM$/$$/Setup/Scripts/RunSCOSSetup.ps1",
+    "Sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1"
   ],
   "recommended_files": [
-    "sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1",
-    "sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe",
-    "sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim"
+    "Sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1",
+    "Sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe"
   ],
   "optional_files": [
-    "sources/$OEM$/$$/Setup/Scripts/SCOSRecovery.wim"
+    "Sources/$OEM$/$$/Setup/Scripts/Recovery/README.md"
   ],
+  "recovery": {
+    "included_in_repository": false,
+    "expected_path": "Sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim",
+    "temporary_fallback_path": "Sources/$OEM$/$$/Setup/Scripts/SCOSRecovery.wim",
+    "missing_behavior": "SCOS setup continues and skips recovery integration.",
+    "future_behavior": "SCOS Builder may download the recovery image separately during ISO creation."
+  },
   "iso_copy_root": ".",
   "notes": [
     "Autounattend.xml contains the __SCOS_BOOTSTRAP_PASSWORD__ placeholder.",
     "SCOS Builder must replace every bootstrap password placeholder before building a real ISO.",
     "The root of this package is intended to be merged into the root of the extracted Windows ISO.",
-    "SCOSRecovery.wim inside Scripts is kept only as a temporary fallback."
+    "SCOSRecovery.wim is not stored in this repository because it exceeds GitHub's normal file size limit.",
+    "Recovery integration is optional for this build package."
   ]
 }
