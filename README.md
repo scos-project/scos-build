@@ -24,20 +24,41 @@ SCOS-Build/
 ├─ Autounattend.xml
 ├─ manifest.json
 ├─ README.md
-└─ sources/
+└─ Sources/
    └─ $OEM$/
       └─ $$/
          └─ Setup/
             └─ Scripts/
                ├─ Recovery/
-               │  └─ SCOSRecovery.wim
+               │  └─ .gitkeep
                ├─ disable-controller-audio.ps1
                ├─ RunSCOSSetup.ps1
-               ├─ SCOSRecovery.wim
                ├─ SCOSSetupProgress.ps1
                ├─ SetupComplete.cmd
                └─ SteamCursorGuard.exe
 ```
+
+## Recovery image
+
+`SCOSRecovery.wim` is not stored directly in this Git repository.
+
+The recovery image is larger than GitHub's normal file size limit, so recovery support is handled separately.
+
+The expected recovery image path during ISO creation is:
+
+```txt
+Sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim
+```
+
+A temporary fallback copy may also be supported at:
+
+```txt
+Sources/$OEM$/$$/Setup/Scripts/SCOSRecovery.wim
+```
+
+If the recovery image is missing, SCOS setup will continue and skip recovery integration for that build.
+
+In a later version, SCOS Builder may download the recovery image separately, for example from a GitHub Release asset.
 
 ## Bootstrap password placeholder
 
@@ -71,9 +92,9 @@ The following files are required:
 
 ```txt
 Autounattend.xml
-sources/$OEM$/$$/Setup/Scripts/SetupComplete.cmd
-sources/$OEM$/$$/Setup/Scripts/RunSCOSSetup.ps1
-sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1
+Sources/$OEM$/$$/Setup/Scripts/SetupComplete.cmd
+Sources/$OEM$/$$/Setup/Scripts/RunSCOSSetup.ps1
+Sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1
 ```
 
 ## Recommended files
@@ -81,26 +102,17 @@ sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1
 The following files are recommended for the complete SCOS experience:
 
 ```txt
-sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1
-sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe
-sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim
+Sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1
+Sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe
 ```
 
-## Recovery environment
+## Optional recovery file
 
-`SCOSRecovery.wim` should be placed in:
+The recovery image is optional for now and should be placed here when available:
 
 ```txt
-sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim
+Sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim
 ```
-
-A fallback copy may temporarily exist at:
-
-```txt
-sources/$OEM$/$$/Setup/Scripts/SCOSRecovery.wim
-```
-
-The fallback copy is temporary and may be removed in a later build package once SCOS Builder reliably copies the recovery image to the `Recovery` folder.
 
 ## Notes
 
