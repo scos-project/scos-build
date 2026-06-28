@@ -1,0 +1,36 @@
+{
+  "name": "SCOS Build Package",
+  "description": "Official SCOS setup package used by SCOS Builder to create Windows-based SCOS installation ISOs.",
+  "scos_build_version": "v0.3.6.4",
+  "channel": "stable",
+  "edition": "Standard",
+  "package_layout_version": 1,
+  "builder_min_version": "v0.1.2",
+  "bootstrap_password_placeholder": "__SCOS_BOOTSTRAP_PASSWORD__",
+  "autounattend": {
+    "source": "Autounattend.xml",
+    "destination": "Autounattend.xml",
+    "requires_placeholder_replacement": true
+  },
+  "required_files": [
+    "Autounattend.xml",
+    "sources/$OEM$/$$/Setup/Scripts/SetupComplete.cmd",
+    "sources/$OEM$/$$/Setup/Scripts/RunSCOSSetup.ps1",
+    "sources/$OEM$/$$/Setup/Scripts/SCOSSetupProgress.ps1"
+  ],
+  "recommended_files": [
+    "sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1",
+    "sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe",
+    "sources/$OEM$/$$/Setup/Scripts/Recovery/SCOSRecovery.wim"
+  ],
+  "optional_files": [
+    "sources/$OEM$/$$/Setup/Scripts/SCOSRecovery.wim"
+  ],
+  "iso_copy_root": ".",
+  "notes": [
+    "Autounattend.xml contains the __SCOS_BOOTSTRAP_PASSWORD__ placeholder.",
+    "SCOS Builder must replace every bootstrap password placeholder before building a real ISO.",
+    "The root of this package is intended to be merged into the root of the extracted Windows ISO.",
+    "SCOSRecovery.wim inside Scripts is kept only as a temporary fallback."
+  ]
+}
