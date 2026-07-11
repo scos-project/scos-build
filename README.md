@@ -9,7 +9,7 @@ This repository contains the setup files injected into a Windows ISO to install 
 * SCOS Build Package: `v0.3.6.5`
 * Edition: `Standard`
 * Channel: `stable`
-* Minimum SCOS Builder version: `v0.1.2`
+* Minimum SCOS Builder version: `v0.1.3`
 
 ## Purpose
 
