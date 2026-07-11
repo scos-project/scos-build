@@ -26,7 +26,7 @@ else {
 }
 
 # SCOS Setup Progress UI
-# SCOS v0.3.6.4 Production Installer
+# SCOS v0.3.6.5 Production Installer
 # Called by SetupComplete.cmd
 #
 # Production behavior:
@@ -47,7 +47,7 @@ Add-Type -AssemblyName System.Drawing
 # App Settings
 # -----------------------------
 
-$AppVersion = "v0.3.6.4"
+$AppVersion = "v0.3.6.5"
 $LogPath = "C:\SCOS\Logs\SCOSSetup.log"
 $SetupCompleteLog = "C:\SetupComplete.log"
 
@@ -116,7 +116,7 @@ $UACSecureDesktopBackup = "C:\SCOS\Setup\UAC_PromptOnSecureDesktop.old"
 
 # Local SCOS account security
 # Autounattend.xml uses a temporary bootstrap password.
-# SCOS v0.3.6.4 replaces it with a unique generated password during final setup.
+# SCOS v0.3.6.5 replaces it with a unique generated password during final setup.
 $SCOSLocalUserName = "SCOS"
 $SCOSGeneratedPasswordPath = "C:\SCOS\Setup\SCOS_LocalPassword.generated"
 $SCOSGeneratedPasswordLogPath = "C:\SCOS\Logs\SCOS_LocalPassword.generated.txt"
@@ -1983,7 +1983,7 @@ function Set-SCOSLocalAccountPassword {
         Set-RegString "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" "DefaultDomainName" "."
         Set-RegString "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" "DefaultPassword" $password
 
-        # SCOS v0.3.6.4:
+        # SCOS v0.3.6.5:
         # Public Standard builds should not create readable password recovery files.
         # Developer/internal builds may keep the readable recovery files for debugging and owner recovery.
         if ($IsStandardLockdown) {
