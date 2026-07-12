@@ -76,7 +76,9 @@ $script:UACRestored = $false
 $script:RestartButton = $null
 $script:ShowDetailsButton = $null
 $script:MainDetailsButton = $null
-$script:SetupIntroVideoSupported = $false
+# Keep the result from the WPF assembly loading check above.
+# Do not reset SetupIntroVideoSupported here, or video playback will always be skipped.
+$script:SetupIntroVideoSupported = [bool]$script:SetupIntroVideoSupported
 $script:SetupIntroPlaybackDone = $false
 $script:SetupIntroPlaybackFailed = $false
 $script:SetupIntroHost = $null
@@ -986,6 +988,26 @@ function Set-SCOSSetupUiVisible {
         }
 
         $control.Visible = $Visible
+    }
+
+    if ($Visible) {
+        # The restart countdown bar must stay hidden during installation.
+        # It is only shown by Start-RestartCountdown after setup is complete.
+        $countdownPanel.Visible = $false
+        $countdownFill.Width = 0
+
+        # In Standard edition, keep the detailed setup log hidden by default.
+        # Developer edition keeps it visible for debugging.
+        $logPanel.Visible = (-not $IsStandardLockdown)
+
+        if ($script:MainDetailsButton) {
+            if ($logPanel.Visible) {
+                $script:MainDetailsButton.Text = "Hide Details"
+            }
+            else {
+                $script:MainDetailsButton.Text = "Show Details"
+            }
+        }
     }
 
     [System.Windows.Forms.Application]::DoEvents()
