@@ -7,7 +7,6 @@ This repository contains the setup files injected into a Windows ISO to install 
 ## Current build
 
 * SCOS Build Package: `v0.3.7`
-=======
 * SCOS Build Package: `v0.3.6.5`
 * Edition: `Standard`
 * Channel: `stable`
