@@ -26,7 +26,7 @@ else {
 }
 
 # SCOS Setup Progress UI
-# SCOS v0.3.6.5 Production Installer
+# SCOS v0.3.7 Production Installer
 # Called by SetupComplete.cmd
 #
 # Production behavior:
@@ -43,11 +43,24 @@ else {
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# WPF assemblies are used only for the optional full-screen setup intro video.
+# If WPF video playback is unavailable, SCOS setup continues normally.
+try {
+    Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+    Add-Type -AssemblyName PresentationFramework -ErrorAction Stop
+    Add-Type -AssemblyName WindowsBase -ErrorAction Stop
+    Add-Type -AssemblyName WindowsFormsIntegration -ErrorAction Stop
+    $script:SetupIntroVideoSupported = $true
+}
+catch {
+    $script:SetupIntroVideoSupported = $false
+}
+
 # -----------------------------
 # App Settings
 # -----------------------------
 
-$AppVersion = "v0.3.6.5"
+$AppVersion = "v0.3.7"
 $LogPath = "C:\SCOS\Logs\SCOSSetup.log"
 $SetupCompleteLog = "C:\SetupComplete.log"
 
@@ -63,6 +76,10 @@ $script:UACRestored = $false
 $script:RestartButton = $null
 $script:ShowDetailsButton = $null
 $script:MainDetailsButton = $null
+$script:SetupIntroVideoSupported = $false
+$script:SetupIntroPlaybackDone = $false
+$script:SetupIntroPlaybackFailed = $false
+$script:SetupIntroHost = $null
 
 # -----------------------------
 # Paths
@@ -121,12 +138,28 @@ $SCOSLocalUserName = "SCOS"
 $SCOSGeneratedPasswordPath = "C:\SCOS\Setup\SCOS_LocalPassword.generated"
 $SCOSGeneratedPasswordLogPath = "C:\SCOS\Logs\SCOS_LocalPassword.generated.txt"
 
+# SCOS setup intro video
+# Recommended build package location:
+# C:\Windows\Setup\Scripts\Media\SCOSSetupIntro.mp4
+#
+# Runtime target location:
+# C:\SCOS\Setup\Media\SCOSSetupIntro.mp4
+#
+# The intro is optional and must never block setup.
+$SCOSSetupMediaFolder = "C:\SCOS\Setup\Media"
+$SCOSSetupIntroSourceFolder = Join-Path $ScriptsRoot "Media"
+$SCOSSetupIntroSourceVideo = Join-Path $SCOSSetupIntroSourceFolder "SCOSSetupIntro.mp4"
+$SCOSSetupIntroTargetVideo = Join-Path $SCOSSetupMediaFolder "SCOSSetupIntro.mp4"
+$SCOSSetupIntroTimeoutSeconds = 20
+
 
 # -----------------------------
 # Folders
 # -----------------------------
 
 New-Item -ItemType Directory -Path "C:\SCOS" -Force | Out-Null
+New-Item -ItemType Directory -Path "C:\SCOS\Setup" -Force | Out-Null
+New-Item -ItemType Directory -Path $SCOSSetupMediaFolder -Force | Out-Null
 New-Item -ItemType Directory -Path $SCOSDownloadsFolder -Force | Out-Null
 New-Item -ItemType Directory -Path "C:\SCOS\Downloads" -Force | Out-Null
 New-Item -ItemType Directory -Path "C:\SCOS\Logs" -Force | Out-Null
@@ -941,12 +974,178 @@ function Start-RestartCountdown {
     [System.Windows.Forms.Application]::DoEvents()
 }
 
+
+function Set-SCOSSetupUiVisible {
+    param(
+        [bool]$Visible
+    )
+
+    foreach ($control in $form.Controls) {
+        if ($script:SetupIntroHost -and $control -eq $script:SetupIntroHost) {
+            continue
+        }
+
+        $control.Visible = $Visible
+    }
+
+    [System.Windows.Forms.Application]::DoEvents()
+}
+
+function Get-SCOSSetupIntroVideoPath {
+    try {
+        if (Test-Path $SCOSSetupIntroTargetVideo) {
+            return $SCOSSetupIntroTargetVideo
+        }
+
+        if (Test-Path $SCOSSetupIntroSourceVideo) {
+            return $SCOSSetupIntroSourceVideo
+        }
+    }
+    catch {
+        return $null
+    }
+
+    return $null
+}
+
+function Stage-SCOSSetupIntroVideo {
+    try {
+        if (-not (Test-Path $SCOSSetupIntroSourceVideo)) {
+            return
+        }
+
+        New-Item -ItemType Directory -Path $SCOSSetupMediaFolder -Force | Out-Null
+
+        Copy-Item -Path $SCOSSetupIntroSourceVideo -Destination $SCOSSetupIntroTargetVideo -Force
+
+        if (Test-Path $SCOSSetupIntroTargetVideo) {
+            Add-UILog "SCOS setup intro video staged: $SCOSSetupIntroTargetVideo"
+        }
+    }
+    catch {
+        Add-UILog "WARN: Failed to stage SCOS setup intro video: $($_.Exception.Message)"
+    }
+}
+
+function Show-SCOSSetupIntroVideo {
+    $videoPath = Get-SCOSSetupIntroVideoPath
+
+    if ([string]::IsNullOrWhiteSpace($videoPath)) {
+        Add-UILog "SCOS setup intro video not found. Showing setup UI immediately."
+        return
+    }
+
+    if (-not $script:SetupIntroVideoSupported) {
+        Add-UILog "WARN: WPF video playback is unavailable. Showing setup UI immediately."
+        return
+    }
+
+    Add-UILog "Playing SCOS setup intro video: $videoPath"
+
+    $script:SetupIntroPlaybackDone = $false
+    $script:SetupIntroPlaybackFailed = $false
+
+    $introHost = $null
+    $mediaElement = $null
+
+    try {
+        $introHost = New-Object System.Windows.Forms.Integration.ElementHost
+        $introHost.Dock = [System.Windows.Forms.DockStyle]::Fill
+        $introHost.BackColor = [System.Drawing.Color]::Black
+
+        $grid = New-Object System.Windows.Controls.Grid
+        $grid.Background = [System.Windows.Media.Brushes]::Black
+
+        $mediaElement = New-Object System.Windows.Controls.MediaElement
+        $mediaElement.LoadedBehavior = [System.Windows.Controls.MediaState]::Manual
+        $mediaElement.UnloadedBehavior = [System.Windows.Controls.MediaState]::Stop
+        $mediaElement.Stretch = [System.Windows.Media.Stretch]::UniformToFill
+        $mediaElement.Volume = 1.0
+        $mediaElement.Source = New-Object System.Uri($videoPath, [System.UriKind]::Absolute)
+
+        $mediaElement.Add_MediaEnded({
+            $script:SetupIntroPlaybackDone = $true
+        })
+
+        $mediaElement.Add_MediaFailed({
+            $script:SetupIntroPlaybackFailed = $true
+            $script:SetupIntroPlaybackDone = $true
+        })
+
+        [void]$grid.Children.Add($mediaElement)
+
+        $introHost.Child = $grid
+        $script:SetupIntroHost = $introHost
+
+        $form.Controls.Add($introHost)
+        $introHost.BringToFront()
+        $form.TopMost = $true
+
+        [System.Windows.Forms.Application]::DoEvents()
+
+        $mediaElement.Play()
+
+        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+        while (-not $script:SetupIntroPlaybackDone -and $stopwatch.Elapsed.TotalSeconds -lt $SCOSSetupIntroTimeoutSeconds) {
+            [System.Windows.Forms.Application]::DoEvents()
+
+            try {
+                [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke(
+                    [Action]{ },
+                    [System.Windows.Threading.DispatcherPriority]::Background
+                )
+            }
+            catch {
+                # If dispatcher pumping fails, WinForms DoEvents still keeps setup responsive.
+            }
+
+            Start-Sleep -Milliseconds 50
+        }
+
+        $stopwatch.Stop()
+
+        if ($script:SetupIntroPlaybackFailed) {
+            Add-UILog "WARN: SCOS setup intro video playback failed. Continuing setup."
+        }
+        elseif (-not $script:SetupIntroPlaybackDone) {
+            Add-UILog "WARN: SCOS setup intro video timed out after $SCOSSetupIntroTimeoutSeconds seconds. Continuing setup."
+        }
+        else {
+            Add-UILog "SCOS setup intro video finished."
+        }
+
+        try {
+            $mediaElement.Stop()
+        }
+        catch {
+        }
+    }
+    catch {
+        Add-UILog "WARN: Failed to play SCOS setup intro video: $($_.Exception.Message)"
+    }
+    finally {
+        try {
+            if ($introHost) {
+                $form.Controls.Remove($introHost)
+                $introHost.Dispose()
+            }
+        }
+        catch {
+        }
+
+        $script:SetupIntroHost = $null
+        [System.Windows.Forms.Application]::DoEvents()
+    }
+}
+
 # -----------------------------
 # SCOS Install Functions
 # -----------------------------
 
 function Check-SCOSSetupResources {
     Add-UILog "Preparing SCOS online installer system..."
+    Stage-SCOSSetupIntroVideo
     Add-UILog "Third-party installers will be downloaded during setup from official servers."
 
     New-Item -ItemType Directory -Path $SCOSDownloadsFolder -Force | Out-Null
@@ -2179,6 +2378,10 @@ function Start-SCOSSetup {
     $form.Close()
 }
 
+# Hide the setup UI until the optional intro video has finished.
+# If the video is missing or fails, the UI is shown immediately by the startup flow.
+Set-SCOSSetupUiVisible -Visible $false
+
 # -----------------------------
 # Start after UI loads
 # -----------------------------
@@ -2187,9 +2390,12 @@ $form.Add_Shown({
     Start-Sleep -Milliseconds 500
 
     try {
+        Show-SCOSSetupIntroVideo
+        Set-SCOSSetupUiVisible -Visible $true
         Start-SCOSSetup
     }
     catch {
+        Set-SCOSSetupUiVisible -Visible $true
         Fail-SCOSSetup "Unexpected setup error: $($_.Exception.Message)"
     }
 })

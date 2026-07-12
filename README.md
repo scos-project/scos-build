@@ -6,10 +6,10 @@ This repository contains the setup files injected into a Windows ISO to install 
 
 ## Current build
 
-* SCOS Build Package: `v0.3.6.4`
+* SCOS Build Package: `v0.3.7`
 * Edition: `Standard`
 * Channel: `stable`
-* Minimum SCOS Builder version: `v0.1.2`
+* Minimum SCOS Builder version: `v0.1.3`
 
 ## Purpose
 
@@ -29,6 +29,8 @@ SCOS-Build/
       └─ $$/
          └─ Setup/
             └─ Scripts/
+               ├─ Media/
+               │  └─ SCOSSetupIntro.mp4
                ├─ Recovery/
                │  └─ .gitkeep
                ├─ disable-controller-audio.ps1
@@ -37,6 +39,30 @@ SCOS-Build/
                ├─ SetupComplete.cmd
                └─ SteamCursorGuard.exe
 ```
+
+## Setup intro animation
+
+SCOS Build Package `v0.3.7` adds support for a full-screen SCOS setup intro animation.
+
+The intro video is expected here:
+
+```txt
+Sources/$OEM$/$$/Setup/Scripts/Media/SCOSSetupIntro.mp4
+```
+
+During first-login setup, `SCOSSetupProgress.ps1` plays the intro animation before showing the installation progress interface.
+
+The recommended final format is:
+
+```txt
+MP4 container
+H.264 video
+AAC audio
+1920x1080
+30 fps
+```
+
+The setup intro is designed to be safe and non-blocking. If the video file is missing, cannot be played, or fails during playback, SCOS setup continues and shows the setup progress interface immediately.
 
 ## Recovery image
 
@@ -85,6 +111,7 @@ In SCOS Standard:
 * Windows Settings and `ms-settings` are not part of the Standard experience.
 * Sound settings may remain available for Steam and audio device configuration.
 * Readable password recovery files are not created in public Standard builds.
+* The SCOS setup intro animation plays before the installation progress interface when available.
 
 ## Required files
 
@@ -104,6 +131,7 @@ The following files are recommended for the complete SCOS experience:
 ```txt
 Sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1
 Sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe
+Sources/$OEM$/$$/Setup/Scripts/Media/SCOSSetupIntro.mp4
 ```
 
 ## Optional recovery file

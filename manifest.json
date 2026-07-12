@@ -1,11 +1,11 @@
 {
   "name": "SCOS Build Package",
   "description": "Official SCOS setup package used by SCOS Builder to create Windows-based SCOS installation ISOs.",
-  "scos_build_version": "v0.3.6.4",
+  "scos_build_version": "v0.3.7",
   "channel": "stable",
   "edition": "Standard",
   "package_layout_version": 1,
-  "builder_min_version": "v0.1.2",
+  "builder_min_version": "v0.1.3",
   "bootstrap_password_placeholder": "__SCOS_BOOTSTRAP_PASSWORD__",
   "autounattend": {
     "source": "Autounattend.xml",
@@ -20,7 +20,8 @@
   ],
   "recommended_files": [
     "Sources/$OEM$/$$/Setup/Scripts/disable-controller-audio.ps1",
-    "Sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe"
+    "Sources/$OEM$/$$/Setup/Scripts/SteamCursorGuard.exe",
+    "Sources/$OEM$/$$/Setup/Scripts/Media/SCOSSetupIntro.mp4"
   ],
   "optional_files": [
     "Sources/$OEM$/$$/Setup/Scripts/Recovery/README.md"
@@ -32,12 +33,21 @@
     "missing_behavior": "SCOS setup continues and skips recovery integration.",
     "future_behavior": "SCOS Builder may download the recovery image separately during ISO creation."
   },
+  "setup_intro": {
+    "included_in_repository": true,
+    "expected_path": "Sources/$OEM$/$$/Setup/Scripts/Media/SCOSSetupIntro.mp4",
+    "target_path": "C:/SCOS/Setup/Media/SCOSSetupIntro.mp4",
+    "missing_behavior": "SCOS setup continues and shows the setup progress interface immediately.",
+    "failure_behavior": "SCOS setup continues and skips the intro animation if playback fails."
+  },
   "iso_copy_root": ".",
   "notes": [
     "Autounattend.xml contains the __SCOS_BOOTSTRAP_PASSWORD__ placeholder.",
     "SCOS Builder must replace every bootstrap password placeholder before building a real ISO.",
     "The root of this package is intended to be merged into the root of the extracted Windows ISO.",
     "SCOSRecovery.wim is not stored in this repository because it exceeds GitHub's normal file size limit.",
-    "Recovery integration is optional for this build package."
+    "Recovery integration is optional for this build package.",
+    "SCOSSetupIntro.mp4 is used by SCOSSetupProgress.ps1 before the setup interface appears.",
+    "The setup intro video is optional at runtime. If it is missing or cannot be played, setup continues normally."
   ]
 }
